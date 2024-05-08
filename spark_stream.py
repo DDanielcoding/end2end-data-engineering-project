@@ -11,7 +11,7 @@ from pyspark.sql.types import StructType, StructField, StringType
 def create_keyspace(session):
     session.execute("""
     CREATE KEYSPACE IF NOT EXISTS spark_streams
-    WITH replication = {'class': 'SimpleSTrategy', 'replication_factor': '1'}
+    WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
     """)
 
     print("Keyspace created successfully!")
@@ -28,13 +28,13 @@ def create_table(session):
     username TEXT,
     registered_date TEXT,
     phone TEXT,
-    picture TEXT
+    picture TEXT);
     """)
 
     print("Table created successfully!")
 
 def insert_data(session, **kwargs):
-    print("insterting data...")
+    print("inserting data...")
 
     user_id = kwargs.get('id')
     first_name = kwargs.get('first_name')
@@ -73,10 +73,11 @@ def create_spark_connection():
                                            "org.apache.spark:spark-sql-kafka-0-10_2.13:3.4.1") \
             .config('spark.cassandra.connection.host', 'localhost') \
             .getOrCreate()
+
         s_conn.sparkContext.setLogLevel("ERROR")
         logging.info("Spark connection created successfully!")
     except Exception as e:
-        logging.error("Couldn't create the spark session due to exception {e}")
+        logging.error(f"Couldn't create the spark session due to exception {e}")
 
     return s_conn
 
@@ -85,11 +86,11 @@ def connect_to_kafka(spark_conn):
     spark_df = None
     try:
         spark_df = spark_conn.readStream \
-        .format('kafka') \
-        .option('kafka.bootstrap.servers', 'localhost:9092') \
-        .option('subscribe', 'users_created') \
-        .option('startingOffsets', 'earliest') \
-        .load()
+            .format('kafka') \
+            .option('kafka.bootstrap.servers', 'localhost:9092') \
+            .option('subscribe', 'users_created') \
+            .option('startingOffsets', 'earliest') \
+            .load()
         logging.info("kafka dataframe created successfully")
     except Exception as e:
         logging.warning(f"kafka dataframe could not be created because: {e}")
@@ -121,12 +122,15 @@ def create_selection_df_from_kafka(spark_df):
         StructField("username", StringType(), False),
         StructField("registered_date", StringType(), False),
         StructField("phone", StringType(), False),
-        StructField("picture", StringType(), False),
+        StructField("picture", StringType(), False)
     ])
 
     sel = spark_df.selectExpr("CAST(value AS STRING)")\
         .select(from_json(col('value'), schema).alias('data')).select("data.*")
     print(sel)
+
+    return sel
+
 
 if __name__ == "__main__":
     # create spark connection
@@ -135,8 +139,8 @@ if __name__ == "__main__":
     if spark_conn is not None:
         # connect to kafka with spark connection
         spark_df = connect_to_kafka(spark_conn)
-        selection_df =create_selection_df_from_kafka(spark_df)
-        session = create_cassandra_connection
+        selection_df = create_selection_df_from_kafka(spark_df)
+        session = create_cassandra_connection()
 
         if session is not None:
             create_keyspace(session)
