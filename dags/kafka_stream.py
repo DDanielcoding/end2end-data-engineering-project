@@ -17,6 +17,7 @@ def get_data():
 
     return res
 
+
 def format_data(res):
     data = {}
     location = res['location']
