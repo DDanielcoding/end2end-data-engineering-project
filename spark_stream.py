@@ -29,9 +29,10 @@ def create_table(session):
     registered_date TEXT,
     phone TEXT,
     picture TEXT);
-    """)
+""")
 
     print("Table created successfully!")
+
 
 def insert_data(session, **kwargs):
     print("inserting data...")
